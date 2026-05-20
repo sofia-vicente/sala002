@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFS Tuned Car</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: transparent; overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="nfs-container" style="width:100vw;height:100vh;position:relative;overflow:hidden;cursor:grab;">
+  <canvas id="nfs-canvas" style="display:block;width:100%;height:100%;"></canvas>
+  <div id="hud" style="position:absolute;top:16px;left:16px;font-family:'Courier New',monospace;color:#ff4400;text-shadow:0 0 8px #ff4400;pointer-events:none;">
+    <div style="font-size:11px;letter-spacing:3px;opacity:.7;">SPEED</div>
+    <div id="speedometer" style="font-size:36px;font-weight:bold;line-height:1;">0</div>
+    <div style="font-size:11px;letter-spacing:3px;opacity:.7;">KM/H</div>
+  </div>
+  <div style="position:absolute;bottom:24px;left:16px;pointer-events:none;">
+    <div style="font-size:10px;font-family:'Courier New',monospace;color:#00cfff;letter-spacing:2px;text-shadow:0 0 6px #00cfff;margin-bottom:4px;">NITRO</div>
+    <div style="width:120px;height:8px;background:rgba(0,207,255,.15);border:1px solid rgba(0,207,255,.4);border-radius:4px;overflow:hidden;">
+      <div id="nitro-fill" style="width:80%;height:100%;background:#00cfff;box-shadow:0 0 6px #00cfff;border-radius:4px;transition:width .1s;"></div>
+    </div>
+  </div>
+  <div style="position:absolute;top:16px;right:16px;font-family:'Courier New',monospace;color:#aaa;font-size:10px;letter-spacing:2px;pointer-events:none;text-align:right;">
+    <div>DRAG TO ROTATE</div>
+    <div style="color:#ff4400;margin-top:4px;">NEED FOR SPEED</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const container = document.getElementById('nfs-container');
+const canvas = document.getElementById('nfs-canvas');
+const W = container.clientWidth, H = container.clientHeight;
+
+/* alpha:true + setClearColor(0,0) = fundo 100% transparente */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+/* Sem scene.background, sem fog */
+
+const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 200);
+camera.position.set(0, 3.5, 10);
+camera.lookAt(0, 0.5, 0);
+
+scene.add(new THREE.AmbientLight(0x334466, 2.0));
+
+const headLight = new THREE.DirectionalLight(0xffeedd, 3.5);
+headLight.position.set(5, 8, 6);
+headLight.castShadow = true;
+headLight.shadow.mapSize.width = 2048;
+headLight.shadow.mapSize.height = 2048;
+scene.add(headLight);
+
+const rimLight = new THREE.DirectionalLight(0xff3300, 2.0);
+rimLight.position.set(-6, 2, -4);
+scene.add(rimLight);
+
+const fillLight = new THREE.DirectionalLight(0x4488ff, 1.0);
+fillLight.position.set(0, -2, 5);
+scene.add(fillLight);
+
+const blueLight = new THREE.PointLight(0x0088ff, 2, 12);
+blueLight.position.set(0, -0.5, 0);
+scene.add(blueLight);
+
+const neonUnderLight = new THREE.PointLight(0x00ffcc, 3, 6);
+neonUnderLight.position.set(0, -0.8, 0);
+scene.add(neonUnderLight);
+
+const carGroup = new THREE.Group();
+scene.add(carGroup);
+
+const bodyMat      = new THREE.MeshStandardMaterial({color:0xff2200, metalness:0.9, roughness:0.08});
+const darkMat      = new THREE.MeshStandardMaterial({color:0x0a0a0a, metalness:0.5, roughness:0.3});
+const glassMat     = new THREE.MeshStandardMaterial({color:0x001133, metalness:0.1, roughness:0.0, transparent:true, opacity:0.6});
+const chromeMat    = new THREE.MeshStandardMaterial({color:0xcccccc, metalness:1.0, roughness:0.05});
+const neonMat      = new THREE.MeshStandardMaterial({color:0x00ffee, emissive:0x00ffee, emissiveIntensity:2, roughness:1});
+const tireMat      = new THREE.MeshStandardMaterial({color:0x111111, roughness:0.9, metalness:0});
+const rimMat       = new THREE.MeshStandardMaterial({color:0xdddddd, metalness:1.0, roughness:0.1});
+const lightMat     = new THREE.MeshStandardMaterial({color:0xffdd88, emissive:0xffaa00, emissiveIntensity:3});
+const tailLightMat = new THREE.MeshStandardMaterial({color:0xff0000, emissive:0xff0000, emissiveIntensity:4});
+
+function box(w,h,d,mat,x,y,z,rx,ry,rz) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+  m.position.set(x,y,z);
+  if(rx) m.rotation.x=rx;
+  if(ry) m.rotation.y=ry;
+  if(rz) m.rotation.z=rz;
+  m.castShadow=true; m.receiveShadow=true;
+  return m;
+}
+function cyl(rt,rb,h,s,mat,x,y,z,rx,ry,rz) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s), mat);
+  m.position.set(x,y,z);
+  if(rx) m.rotation.x=rx;
+  if(ry) m.rotation.y=ry;
+  if(rz) m.rotation.z=rz;
+  m.castShadow=true;
+  return m;
+}
+
+/* Carroceria */
+carGroup.add(box(3.8,0.55,8.2, bodyMat,  0,0.3,0));
+carGroup.add(box(2.8,0.7,3.5,  bodyMat,  0,0.98,-0.3));
+carGroup.add(box(2.4,0.15,3.0, bodyMat,  0,1.36,-0.3));
+carGroup.add(box(2.5,0.7,0.08, glassMat, 0,1.0,1.4,  -0.38,0,0));
+carGroup.add(box(2.5,0.6,0.08, glassMat, 0,1.0,-1.85,  0.32,0,0));
+carGroup.add(box(3.6,0.12,3.0, bodyMat,  0,0.6,1.9,   0.05,0,0));
+carGroup.add(box(3.4,0.18,1.8, bodyMat,  0,0.62,-3.0,-0.04,0,0));
+
+/* Spoiler */
+carGroup.add(box(3.6,0.08,0.2, bodyMat,  0,1.28,-3.8));
+carGroup.add(box(3.6,0.06,0.9, bodyMat,  0,1.58,-3.85,-0.1,0,0));
+carGroup.add(box(0.1,0.32,0.2, bodyMat,  1.7,1.42,-3.8));
+carGroup.add(box(0.1,0.32,0.2, bodyMat, -1.7,1.42,-3.8));
+
+/* Bumpers */
+carGroup.add(box(3.7,0.42,0.3, darkMat,  0,0.08, 4.2));
+carGroup.add(box(3.7,0.42,0.3, darkMat,  0,0.08,-4.2));
+
+/* Neon lateral + underside */
+carGroup.add(box(0.12,0.18,7.0, neonMat,  1.93,-0.1,0));
+carGroup.add(box(0.12,0.18,7.0, neonMat, -1.93,-0.1,0));
+carGroup.add(box(3.5,0.06,7.5,  neonMat,  0,-0.58,0));
+
+/* Faróis e lanternas */
+carGroup.add(box(0.55,0.22,0.1, lightMat,      1.35, 0.38, 4.26));
+carGroup.add(box(0.55,0.22,0.1, lightMat,     -1.35, 0.38, 4.26));
+carGroup.add(box(0.6, 0.18,0.1, tailLightMat,  1.4,  0.4, -4.26));
+carGroup.add(box(0.6, 0.18,0.1, tailLightMat, -1.4,  0.4, -4.26));
+
+/* Escapamentos */
+carGroup.add(cyl(0.08,0.1,0.4,16, chromeMat,  1.20,-0.38,-4.38, Math.PI/2,0,0));
+carGroup.add(cyl(0.08,0.1,0.4,16, chromeMat, -1.20,-0.38,-4.38, Math.PI/2,0,0));
+carGroup.add(cyl(0.06,0.08,0.4,16,chromeMat,  0.95,-0.38,-4.38, Math.PI/2,0,0));
+carGroup.add(cyl(0.06,0.08,0.4,16,chromeMat, -0.95,-0.38,-4.38, Math.PI/2,0,0));
+
+/* Air scoop */
+carGroup.add(box(0.9,0.22,1.0, darkMat, 0,0.78,1.5));
+carGroup.add(box(0.7,0.12,0.8, bodyMat, 0,0.92,1.5));
+
+/* Paralamas */
+carGroup.add(box(0.22,0.32,2.2, bodyMat,  2.06,0.32, 2.8));
+carGroup.add(box(0.22,0.32,2.2, bodyMat, -2.06,0.32, 2.8));
+carGroup.add(box(0.22,0.32,2.2, bodyMat,  2.06,0.32,-2.8));
+carGroup.add(box(0.22,0.32,2.2, bodyMat, -2.06,0.32,-2.8));
+
+function addWheel(x,z) {
+  const wg = new THREE.Group();
+  const tire = new THREE.Mesh(new THREE.TorusGeometry(0.72,0.28,16,40), tireMat);
+  tire.rotation.y = Math.PI/2;
+  wg.add(tire);
+  const disk = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.08,24), tireMat);
+  disk.rotation.z = Math.PI/2;
+  wg.add(disk);
+  for(let i=0;i<5;i++) {
+    const angle = (i/5)*Math.PI*2;
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.5,0.06), rimMat);
+    spoke.position.set(Math.sin(angle)*0.28, Math.cos(angle)*0.28, 0);
+    spoke.rotation.z = angle;
+    spoke.rotation.y = Math.PI/2;
+    wg.add(spoke);
+  }
+  const center = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.16,16), rimMat);
+  center.rotation.z = Math.PI/2;
+  wg.add(center);
+  wg.position.set(x,-0.28,z);
+  carGroup.add(wg);
+  return wg;
+}
+
+const wheels = [
+  addWheel( 2.08, 2.8),
+  addWheel(-2.08, 2.8),
+  addWheel( 2.08,-2.8),
+  addWheel(-2.08,-2.8),
+];
+
+/* Controle de rotação — mouse e touch */
+let isDragging=false, prevX=0, prevY=0, velX=0, velY=0, rotY=0, rotX=0;
+
+container.addEventListener('mousedown', e=>{isDragging=true;prevX=e.clientX;prevY=e.clientY;velX=0;velY=0;container.style.cursor='grabbing';});
+window.addEventListener('mouseup', ()=>{isDragging=false;container.style.cursor='grab';});
+window.addEventListener('mousemove', e=>{
+  if(!isDragging) return;
+  velX=(e.clientX-prevX)*0.007; velY=(e.clientY-prevY)*0.004;
+  rotY+=velX; rotX+=velY;
+  prevX=e.clientX; prevY=e.clientY;
+});
+container.addEventListener('touchstart', e=>{isDragging=true;prevX=e.touches[0].clientX;prevY=e.touches[0].clientY;velX=0;velY=0;});
+container.addEventListener('touchend', ()=>{isDragging=false;});
+container.addEventListener('touchmove', e=>{
+  if(!isDragging) return;
+  velX=(e.touches[0].clientX-prevX)*0.007; velY=(e.touches[0].clientY-prevY)*0.004;
+  rotY+=velX; rotX+=velY;
+  prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;
+});
+
+const speedEl   = document.getElementById('speedometer');
+const nitroFill = document.getElementById('nitro-fill');
+let t=0, nitro=80;
+
+function animate() {
+  requestAnimationFrame(animate);
+  t+=0.016;
+
+  if(!isDragging) {
+    velX*=0.93; velY*=0.93;
+    rotY+=velX;
+    rotY+=0.004; /* auto-rotação suave */
+  }
+  rotX = Math.max(-0.5, Math.min(0.5, rotX + (isDragging ? velY : 0)));
+  if(!isDragging) rotX*=0.97;
+
+  carGroup.rotation.y = rotY;
+  carGroup.rotation.x = rotX;
+
+  wheels.forEach(w=>{ w.rotation.x -= 0.04; });
+
+  const pulse = 0.7 + Math.sin(t*3)*0.3;
+  neonMat.emissiveIntensity      = pulse * 2;
+  neonUnderLight.intensity       = pulse * 4;
+  blueLight.intensity            = 1.5 + Math.sin(t*2.5)*0.5;
+  blueLight.color.setHSL(0.55 + Math.sin(t)*0.05, 1, 0.5);
+  tailLightMat.emissiveIntensity = 2 + Math.sin(t*4)*1.5;
+
+  speedEl.textContent = Math.round(180 + Math.sin(t*0.7)*40 + Math.random()*8);
+  nitro = Math.max(20, Math.min(100, nitro + (Math.random()-0.4)));
+  nitroFill.style.width = nitro+'%';
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', ()=>{
+  const nW=container.clientWidth, nH=container.clientHeight;
+  camera.aspect=nW/nH; camera.updateProjectionMatrix();
+  renderer.setSize(nW,nH);
+});
+</script>
+</body>
+</html>

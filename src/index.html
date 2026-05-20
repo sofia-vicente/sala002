@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Need for Speed</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  </head>
+  <body>
+    <nav>
+      <span class="navItems" onclick="navTo('s1')">
+        <img src="../assets/icons/home.png" alt="Jogo" width="30px" />
+        <a class="navWords">Jogo</a>
+      </span>
+      <span class="navItems" onclick="navTo('s2')">
+        <img src="../assets/icons/box.png" alt="Carros" width="30px" />
+        <a class="navWords">Carros</a>
+      </span>
+      <span class="navItems" onclick="navTo('s3')">
+        <img src="../assets/icons/video.png" alt="Vídeo" width="30px" />
+        <a class="navWords">Vídeo</a>
+      </span>
+      <span class="navItems" onclick="navTo('s4')">
+        <img src="../assets/icons/mobile.png" alt="Contato" width="30px" />
+        <a class="navWords">Contato</a>
+      </span>
+    </nav>
+    <main>
+      <section id="s1">
+        <h1>Need for Speed</h1>
+        <h2>Best racing game of all times.</h2>
+      </section>
+      <section id="s2">
+        <div class="card">
+          <img width="300px" height="auto" src="../assets/images/01.jpg" alt="nfs1" />
+          <div>
+            <h4>Need for Speed: Underground 2</h4>
+            <p>Traz uma cidade vibrante onde o jogador alterna entre corridas legais durante o dia e disputas ilegais à noite. O sistema de risco e reputação adiciona tensão extra, especialmente quando a polícia entra em cena.</p>
+          </div>
+        </div>
+        <div class="card">
+          <img width="300px" height="auto" src="../assets/images/02.jpg" alt="nfs2" />
+          <div>
+            <h4>Need for Speed: Most Wanted</h4>
+            <p>Um dos jogos mais marcantes da franquia, trazendo corridas de rua, tuning extremo e uma atmosfera urbana cheia de neon. Seu mundo aberto e a liberdade de customização fizeram dele um clássico entre fãs de velocidade</p>
+          </div>
+        </div>
+        <div class="card">
+          <img width="300px" height="auto" src="../assets/images/03.jpg" alt="nfs3" />
+          <div>
+            <h4>Need for Speed Heat</h4>
+            <p>Conhecido pelas perseguições policiais intensas e pela icônica lista Blacklist, ele mistura adrenalina e estratégia em cada corrida. A combinação de carros exóticos, narrativa envolvente e ação constante tornou esse título um dos mais lembrados da série.</p>
+          </div>
+        </div>
+      </section>
+      <section id="s3">
+        <iframe
+          class="vid"
+          src="https://www.youtube.com/embed/9ewiJJe_nYI?si=QBAFa5Ym9jjekUK2&autoplay=0"
+          title="YouTube video player"
+          frameborder="0"
+          allow="
+            accelerometer;
+            autoplay;
+            clipboard-write;
+            encrypted-media;
+            gyroscope;
+            picture-in-picture;
+            web-share;
+          "
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+        ></iframe>
+      </section>
+      <section id="s4">
+        <h3>CONTATO</h3>
+      
+        <div class="formulario">
+          <label for="nome">Nome:</label>
+          <input type="text" id="nome" placeholder="Digite seu nome">
+          <label for="assunto">Mensagem:</label>
+          <textarea id="assunto" placeholder="Digite uma mensagem"></textarea>
+          <button onclick="enviar()">ENVIAR</button>
+        </div>
+        <div>
+          <div id="saturno-container"></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <a href="https://www.facebook.com" target="_blank">
+        <img width="40px" src="../assets/icons/facebook.png" alt="facebook" />
+      </a>
+      <a href="https://www.instagram.com" target="_blank">
+        <img width="40px" src="../assets/icons/instagram.png" alt="instagram" />
+      </a>
+      <a href="https://www.linkedin.com" target="_blank">
+        <img width="40px" src="../assets/icons/linkedin.png" alt="linkedin" />
+      </a>
+    </footer>
+ <script>
+        const container = document.getElementById('saturno-container');
+        const W = container.clientWidth;
+        const H = container.clientHeight;
+
+        /* Renderer — alpha:true = fundo 100% transparente */
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        /* Sem scene.background — fundo do site aparece por baixo */
+
+        const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
+        camera.position.set(0, 12, 32);
+        camera.lookAt(0, 0, 0);
+
+        /* Luzes */
+        scene.add(new THREE.AmbientLight(0xffeedd, 0.45));
+        const sunLight = new THREE.DirectionalLight(0xfff5e0, 2.0);
+        sunLight.position.set(30, 20, 20);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
+
+        /* Estrelas */
+        const starVerts = [];
+        for (let i = 0; i < 2200; i++) {
+            starVerts.push(
+                (Math.random() - 0.5) * 700,
+                (Math.random() - 0.5) * 700,
+                (Math.random() - 0.5) * 700
+            );
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+        scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.45, transparent: true, opacity: 0.75 })));
+
+        /* Textura do planeta via canvas */
+        const texCanvas = document.createElement('canvas');
+        texCanvas.width = 1024; texCanvas.height = 512;
+        const ctx = texCanvas.getContext('2d');
+
+        const faixas = [
+            { y: 0.00, h: 0.08, c: '#b8845a' },
+            { y: 0.08, h: 0.06, c: '#d4a97a' },
+            { y: 0.14, h: 0.10, c: '#c2956b' },
+            { y: 0.24, h: 0.08, c: '#e8c99a' },
+            { y: 0.32, h: 0.14, c: '#c48850' },
+            { y: 0.46, h: 0.10, c: '#ddb87e' },
+            { y: 0.56, h: 0.08, c: '#c0885a' },
+            { y: 0.64, h: 0.10, c: '#e2c07a' },
+            { y: 0.74, h: 0.08, c: '#b07840' },
+            { y: 0.82, h: 0.10, c: '#d4a060' },
+            { y: 0.92, h: 0.08, c: '#c49070' },
+        ];
+        faixas.forEach(f => {
+            ctx.fillStyle = f.c;
+            ctx.fillRect(0, f.y * 512, 1024, f.h * 512 + 2);
+        });
+        for (let i = 0; i < 8000; i++) {
+            const x = Math.random() * 1024;
+            const y = Math.random() * 512;
+            const a = Math.random() * 0.07;
+            const r = Math.random() > 0.5 ? 220 : 100;
+            ctx.fillStyle = `rgba(${r},${Math.floor(Math.random() * 80 + 100)},${Math.floor(Math.random() * 40)},${a})`;
+            ctx.fillRect(x, y, Math.random() * 45 + 4, Math.random() * 2.5 + 1);
+        }
+        const saturnTex = new THREE.CanvasTexture(texCanvas);
+
+        /* Planeta Saturno */
+        const saturn = new THREE.Mesh(
+            new THREE.SphereGeometry(6, 64, 64),
+            new THREE.MeshStandardMaterial({ map: saturnTex, roughness: 0.85, metalness: 0.0 })
+        );
+        saturn.rotation.z = 0.47;
+        saturn.castShadow = true;
+        scene.add(saturn);
+
+        /* Anéis — várias camadas com transparência */
+        function criarAnel(inner, outer, cor, opacidade) {
+            const geo = new THREE.RingGeometry(inner, outer, 200);
+            const pos = geo.attributes.position;
+            const uv = geo.attributes.uv;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i), y = pos.getY(i);
+                const r = Math.sqrt(x * x + y * y);
+                uv.setXY(i, (r - inner) / (outer - inner), 0);
+            }
+            const mat = new THREE.MeshStandardMaterial({
+                color: cor,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: opacidade,
+                roughness: 1.0
+            });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.rotation.x = Math.PI / 2;
+            return ring;
+        }
+
+        const ringGroup = new THREE.Group();
+        ringGroup.rotation.z = 0.47;
+        ringGroup.add(criarAnel(7.2, 8.0, 0x7a5a30, 0.20));
+        ringGroup.add(criarAnel(8.0, 9.2, 0xd4b07a, 0.55));
+        ringGroup.add(criarAnel(9.2, 10.5, 0xc8a060, 0.72));
+        ringGroup.add(criarAnel(10.5, 11.2, 0xecd0a0, 0.82));
+        ringGroup.add(criarAnel(11.2, 12.0, 0xb89060, 0.62));
+        ringGroup.add(criarAnel(12.0, 12.6, 0xd4b880, 0.42));
+        ringGroup.add(criarAnel(12.6, 13.2, 0xa07840, 0.22));
+        ringGroup.add(criarAnel(13.2, 13.8, 0xc0a070, 0.10));
+        scene.add(ringGroup);
+
+        /* Luas */
+        function criarLua(raio, dist, velocidade, cor, inclinacao) {
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(raio, 20, 20),
+                new THREE.MeshStandardMaterial({ color: cor, roughness: 1 })
+            );
+            const pivot = new THREE.Object3D();
+            pivot.rotation.x = inclinacao;
+            mesh.position.x = dist;
+            pivot.add(mesh);
+            scene.add(pivot);
+            return { pivot, velocidade };
+        }
+
+        const luas = [
+            criarLua(0.28, 16, 2.2, 0xddddcc, 0.30),
+            criarLua(0.20, 19, 1.5, 0xccccbb, -0.20),
+            criarLua(0.55, 23, 0.9, 0xbbaa99, 0.50),
+            criarLua(0.15, 27, 0.6, 0xddccbb, -0.40),
+        ];
+
+        /* ── Controle de rotação pelo mouse e touch ── */
+        let isDragging = false;
+        let prevX = 0, prevY = 0;
+        let rotX = 0, rotY = 0;
+        let velX = 0, velY = 0;
+
+        /* Mouse */
+        container.addEventListener('mousedown', e => {
+            isDragging = true;
+            prevX = e.clientX;
+            prevY = e.clientY;
+            velX = 0; velY = 0;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - prevX;
+            const dy = e.clientY - prevY;
+            velX = dx * 0.005;
+            velY = dy * 0.003;
+            rotY += velX;
+            rotX += velY;
+            prevX = e.clientX;
+            prevY = e.clientY;
+        });
+
+        /* Touch (mobile) */
+        container.addEventListener('touchstart', e => {
+            isDragging = true;
+            prevX = e.touches[0].clientX;
+            prevY = e.touches[0].clientY;
+            velX = 0; velY = 0;
+        });
+        container.addEventListener('touchend', () => { isDragging = false; });
+        container.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const dx = e.touches[0].clientX - prevX;
+            const dy = e.touches[0].clientY - prevY;
+            velX = dx * 0.005;
+            velY = dy * 0.003;
+            rotY += velX;
+            rotX += velY;
+            prevX = e.touches[0].clientX;
+            prevY = e.touches[0].clientY;
+        });
+
+        /* Loop de animação */
+        let t = 0;
+        function animar() {
+            requestAnimationFrame(animar);
+            t += 0.004;
+
+            if (!isDragging) {
+                /* Inércia — continua girando suavemente após soltar */
+                velX *= 0.94;
+                velY *= 0.94;
+                rotY += velX;
+                rotX += velY;
+                /* Auto-rotação suave quando o usuário não interage */
+                rotY += 0.003;
+            }
+
+            /* Limita inclinação vertical */
+            rotX = Math.max(-0.7, Math.min(0.7, rotX));
+
+            saturn.rotation.y = rotY;
+            saturn.rotation.x = rotX;
+            ringGroup.rotation.y = rotY;
+            ringGroup.rotation.x = rotX;
+
+            luas.forEach(l => { l.pivot.rotation.y = t * l.velocidade; });
+
+            renderer.render(scene, camera);
+        }
+        animar();
+
+        /* Responsivo */
+        window.addEventListener('resize', () => {
+            const nW = container.clientWidth;
+            const nH = container.clientHeight;
+            camera.aspect = nW / nH;
+            camera.updateProjectionMatrix();
+            renderer.setSize(nW, nH);
+        });
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>
